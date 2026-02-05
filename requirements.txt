@@ -3,4 +3,5 @@ uvicorn
 tensorflow
 opencv-python-headless
 numpy
+jinja2
 python-multipart

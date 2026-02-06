@@ -5,7 +5,6 @@ from fastapi.templating import Jinja2Templates
 
 import numpy as np
 import cv2
-from tensorflow.keras.models import load_model
 import tensorflow as tf
 
 app = FastAPI()
@@ -17,8 +16,11 @@ emotion_labels = [
     "happy", "neutral", "sad", "surprise"
 ]
 
+# load SavedModel
 model = tf.saved_model.load("models/emotion_savedmodel")
-print("Model loaded")
+infer = model.signatures["serving_default"]
+
+print("SavedModel loaded")
 
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -28,16 +30,14 @@ def preprocess(image_bytes):
     arr = np.frombuffer(image_bytes, np.uint8)
     img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
 
-    # convert to grayscale (model expects 1 channel)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
     gray = cv2.resize(gray, (IMG_SIZE, IMG_SIZE))
     gray = gray / 255.0
 
-    gray = np.expand_dims(gray, axis=-1)  # channel
-    gray = np.expand_dims(gray, axis=0)   # batch
+    gray = np.expand_dims(gray, axis=-1)
+    gray = np.expand_dims(gray, axis=0)
 
-    return gray
+    return gray.astype("float32")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -51,7 +51,10 @@ async def predict(file: UploadFile = File(...)):
         image_bytes = await file.read()
         img = preprocess(image_bytes)
 
-        preds = model.predict(img, verbose=0)
+        outputs = infer(tf.constant(img))
+
+        # get tensor output
+        preds = list(outputs.values())[0].numpy()
 
         idx = int(np.argmax(preds))
         confidence = float(np.max(preds))

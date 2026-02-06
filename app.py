@@ -16,7 +16,7 @@ emotion_labels = [
     "happy", "neutral", "sad", "surprise"
 ]
 
-model = load_model("models/emotion_model.keras", compile= False)
+model = load_model("models/emotion_model_clean.h5", compile= False)
 print("Model loaded")
 
 templates = Jinja2Templates(directory="templates")

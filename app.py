@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 import numpy as np
 import cv2
 from tensorflow.keras.models import load_model
+import tensorflow as tf
 
 app = FastAPI()
 
@@ -16,7 +17,7 @@ emotion_labels = [
     "happy", "neutral", "sad", "surprise"
 ]
 
-model = load_model("models/emotion_model_clean.h5", compile= False)
+model = tf.saved_model.load("models/emotion_savedmodel")
 print("Model loaded")
 
 templates = Jinja2Templates(directory="templates")
